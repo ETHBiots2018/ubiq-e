@@ -1,7 +1,7 @@
 import "./SensorMonitor.sol";
 
 //wroking with https://github.com/ConsenSys/Token-Factory/blob/master/contracts/StandardToken.sol
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.18;
 
 contract Token {
 
@@ -117,7 +117,7 @@ contract UBIQBiots18 is StandardToken {
     //setting price
     uint256 public buyPrice;
 
-    function setPrices(uint256 newSellPrice, uint256 newBuyPrice) public {
+    function setPrices(uint256 newBuyPrice) public {
         require(msg.sender == owner);
         buyPrice = newBuyPrice;
     }

@@ -1,5 +1,7 @@
+import "./SensorMonitor.sol";
+
 //wroking with https://github.com/ConsenSys/Token-Factory/blob/master/contracts/StandardToken.sol
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.20;
 
 contract Token {
 
@@ -86,7 +88,6 @@ contract StandardToken is Token {
 }
 
 contract UBIQBiots18 is StandardToken {
-
     /*
     NOTE:
     The following variables are OPTIONAL vanities. One does not have to include them.
@@ -98,17 +99,19 @@ contract UBIQBiots18 is StandardToken {
     string public symbol;                 // An identifier: eg SBX, XPR etc..
     string public version = 'H1.0'; 
     address owner;
+    Grid ourUserMaps;
 
     // This is a constructor function 
     // which means the following function name has to match the contract name declared above
-    function UBIQBiots18() public {
-        balances[msg.sender] = 1000000;               // Give the creator all initial tokens. This is set to 1'000'000 for example. 
+    function UBIQBiots18(uint256 amount, Grid userMaps) public {
+        balances[msg.sender] = amount;               // Give the creator all initial tokens. This is set to 1'000'000 for example. 
             //If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000.
-        totalSupply = 1000000000000000000000000;                     // Update total supply (1'000'000 for example)
+        totalSupply = amount * 1000000000000000000;                  // Update total supply (1'000'000 for example)
         name = "UBIQBiots18";                                        // Set the name for display purposes
         decimals = 18;                                               // Amount of decimals for display purposes
         symbol = "UBIQ";                                             // Set the symbol for display purposes
         owner = msg.sender;                                          // The owner of the contract gets ETH
+        ourUserMaps = userMaps;
     }
     
     //setting price
@@ -117,6 +120,29 @@ contract UBIQBiots18 is StandardToken {
     function setPrices(uint256 newSellPrice, uint256 newBuyPrice) public {
         require(msg.sender == owner);
         buyPrice = newBuyPrice;
+    }
+    
+    function getPrice() public view returns (uint256) {
+        return buyPrice;
+    }
+    
+    function payEnergyWithTokens() {
+        uint256 toPay = ourUserMaps.getToPay(msg.sender);
+        uint256 balance = balanceOf(msg.sender);
+        if(toPay > balance) {
+            ourUserMaps.setToPay(msg.sender, toPay - balance);
+            transfer(owner, balance);
+        } else {
+            ourUserMaps.setToPay(msg.sender, 0);
+            transfer(owner, balance - toPay);
+        }
+    }
+    
+    function payEnergyWithCash() public {
+        //get contract with bank account
+        //uint256 amountPayed = 100;
+        //uint256 toPay = ourUserMaps.getToPay(msg.sender);
+        ourUserMaps.setToPay(msg.sender, 0); //later changed with toPay-amountPayed
     }
     
     /* MARKET

@@ -1,0 +1,63 @@
+<html>
+    <head>
+        <title>web3 test</title>
+        <script src="jquery-3.2.1.js"></script>
+        <script type="text/javascript">
+            var user_name = "UBIQ 1"
+            var token_price = 123;
+        </script>
+    </head>
+    <body>
+        <center>
+        <h1>USER:
+            <script type="text/javascript">
+            document.write(user_name)
+            </script>
+        </h1>
+        <!--<div id="content">Can I has web3?!</div>-->
+        <form id="balance_form">
+            <button type="submit">Balance</button>
+            <div id="balance_content"> Click to check your balance.. </div>
+            <!--<input type="text" name="Balance" id="Balance" value="your current balance" />-->
+        </form>
+        <div>
+            <p>
+                <img src="./prod_cons.gif" alt="Your smart meter reading" width="200" height="200" border="0">
+                <!--<script src="custom.js"></script>-->
+            </p>
+        </div> 
+        <div>
+                <p>
+                    <img src="./graph.png" alt="Your smart meter reading" width="500" height="150" border="0">
+                    <!--<script src="custom.js"></script>-->
+                </p>
+            </div> 
+        <div>
+                Token Price as per current Market =        
+                <script type="text/javascript">
+                document.write(token_price)
+                </script>
+        </div>
+        <p>
+        <form id="transfer_form">
+            <button type="submit">Transfer</button>
+            <input type="text" name="SendToAddress" id="SendToAddress" value="Sender's address" />
+            <input type="text" name="NumberOfTokens" id="NumberOfTokens" value="# Tokens" />
+        </form>
+        </p>
+        <input type="text" name="BuyNumberOfTokens" id="BuyNumberOfTokens" value="# Tokens to buy" />
+        <form id="buy_form_token">
+                <button type="submit">TOKEN</button>
+                <!-- <button type="submit">CASH</button>-->
+        </form>
+        <form id="buy_form_cash">
+            <!--<button type="submit">TOKEN</button>-->
+            <button type="submit">CASH</button>
+        </form>
+        <div id="updates"> Your updates.. </div>        
+</center>
+        <!--<img src="./ani_what.gif" alt="WHATEVER MAKES YOU HAPPY" width="300" height="50" border="0">-->
+        <script src="custom.js"></script>
+        
+    </body>
+</html>

@@ -1,6 +1,6 @@
-import "./ubiq.sol";
+import "./ubiqToken.sol";
 
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.18;
 
 contract Grid {
     //MAPS THAT LATER ON CAN BE TAKEN DOWN OF BLOCKCHAIN
@@ -93,6 +93,7 @@ contract SensorOwner {
     
     function SensorOwner() {
         SensorAuthenticator = msg.sender;
+        
         Authenticator auth = new Authenticator(this);
         userMaps = new Grid(auth, this);
         
@@ -113,6 +114,10 @@ contract SensorOwner {
     
     function getTokenAddress() public view returns (address) {
         return ourTokenAddress;
+    }
+    
+    function getGridAddress() public view returns (address) {
+        return userMaps;
     }
     
     //TODO

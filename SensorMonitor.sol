@@ -1,52 +1,105 @@
+import "./ubiq.sol";
+
 pragma solidity ^0.4.20;
 
 contract Grid {
-    //A Map
-    mapping (address => uint256) production;
-    mapping (address => uint256) consumption;
-    mapping (address => address) sensorOwner;
+    //MAPS THAT LATER ON CAN BE TAKEN DOWN OF BLOCKCHAIN
+    mapping (address => uint256) productionMap;
+    mapping (address => uint256) consumptionMap;
+    //MAPS THAT NEED TO STAY ON BLOCKCHAIN
+    mapping (address => address) sensorOwnerMap;
+    mapping (address => uint256) toPayMap; 
+    
+    Authenticator ourAuthenticator;
+    SensorOwner ourSensorOwner;
+    bool initialized = false;
+    
+    function Grid(Authenticator authenticator, SensorOwner sensorowner) {
+        require(!initialized);
+        ourAuthenticator = authenticator;
+        ourSensorOwner = sensorowner;
+        initialized = true;
+    }
     
     function setOwnerOfSensor(address sensor) public {
-        sensorOwner[sensor] = msg.sender;
+        require(ourAuthenticator.isAuthenticated(sensor));
+        sensorOwnerMap[sensor] = msg.sender;
     }
     
     function getSensorOwner(address sensor) public view returns (address) {
-        return sensorOwner[sensor];
+        address owner = sensorOwnerMap[sensor];
+        require(owner != 0);
+        return owner;
     }
     
     function setConsumption(address user, uint256 consumption) public {
-        consumption[user] = consumption;
+        require(ourAuthenticator.isAuthenticated(msg.sender));
+        consumptionMap[user] = consumption;
     }
     
     function getConsumption(address user) public view returns (uint256) {
-        return consumption[user];
+        return consumptionMap[user];
     }
     
-    function setProduction(address user, uint256 consumption) public {
-        production[user] = production;
+    function setProduction(address user, uint256 production) public {
+        require(ourAuthenticator.isAuthenticated(msg.sender));
+        productionMap[user] = production;
     }
     
     function getProduction(address user) public view returns (uint256) {
-        return production[user];
+        return productionMap[user];
     }
     
-    function authenticate() public view returns (address) {
-        address owner = getSensorOwner(msg.sender);
-        require(owner != 0);
-        return owner;
-    }  
+    function getToPay(address user) public view returns (uint256) {
+        return toPayMap[user];
+    }
+    
+    function setToPay(address user, uint256 amount) public {
+        require(msg.sender == ourSensorOwner.getTokenAddress());
+        toPayMap[user] = amount;
+    }
+    
+    //sends measurements on blockchain
+    //sensor is calling that
+    function sendMeasurement(uint256 production, uint256 consumption) public {
+        require(ourAuthenticator.isAuthenticated(msg.sender));
+        address user = getSensorOwner(msg.sender);
+        consumptionMap[user] += consumption;
+        productionMap[user] += production;
+        if(production > consumption) {
+            address tokenAddress = ourSensorOwner.getTokenAddress();
+            UBIQBiots18 token = UBIQBiots18(tokenAddress);
+            token.transferFrom(ourSensorOwner, user, production - consumption);
+        }
+        if(production < consumption) {
+            toPayMap[user] += consumption - production;
+        }
+    }
+    
+    function resetProduction() public {
+        productionMap[msg.sender] = 0;
+    }
+    
+    function resetConsumption() public {
+        consumptionMap[msg.sender] = 0;
+    }
 }
 
 contract SensorOwner {
     mapping (address => uint8) authenticatedSensors;
     address SensorAuthenticator;
+    address ourTokenAddress;
+    Grid userMaps;
     
     function SensorOwner() {
-        Grid userMaps = new Grid();
-        OurEnergySensor sensorMonitor = new OurEnergySensor();
-        User userFunctions = new User();
-        Authenticator auth = new Authenticator();
-        authenticator.setSensorOwner(this);
+        SensorAuthenticator = msg.sender;
+        Authenticator auth = new Authenticator(this);
+        userMaps = new Grid(auth, this);
+        
+        uint256 amountOfTokens = 100000000;
+        UBIQBiots18 token = new UBIQBiots18(amountOfTokens, userMaps);
+        ourTokenAddress = token;
+        token.approve(userMaps, amountOfTokens);
     }
     
     function addSensor(address newSensor) public {
@@ -54,40 +107,31 @@ contract SensorOwner {
         authenticatedSensors[newSensor] = 1;
     }
     
+    function isAuthenticatedSensor(address sensor) public view returns (bool) {
+        return (authenticatedSensors[sensor] == 1);
+    }
+    
+    function getTokenAddress() public view returns (address) {
+        return ourTokenAddress;
+    }
+    
+    //TODO
+    function collectMoney() {
+        
+    }
 }
 
 contract Authenticator {
-    SensorOwner owner;
-    function isAuthenticated() public view returns (bool) {
-        return (owner.authenticatedSensors[msg.sender] == 1);
+    SensorOwner ourSensorOwner;
+    bool initialized = false;
+    
+    function Authenticator(SensorOwner owner) {
+        require(!initialized);
+        ourSensorOwner = owner;
+        initialized = true;
     }
     
-    function setSensorOwner(SensorOwner owner) {
-        this.owner = owner;
-    };
-}
-
-contract OurEnergySensor {
-
-    Grid userMaps;
-    
-    function OurEnergySensor() {
-        SensorAuthenticator = msg.sender;
-        userMaps = new Grid();
+    function isAuthenticated(address sensor) public view returns (bool) {
+        ourSensorOwner.isAuthenticatedSensor(sensor);
     }
-    
-    //sends measurements on blockchain
-    //sensor is calling that
-    function sendMeasurement(uint256 production, uint256 consumption) public {
-        isOurEnergySensor();
-        address owner = authenticate();
-        userMaps.setConsumption(owner,consumption);
-        userMaps.setProduction(owner,production);
-    }
-}
-
-contract User {
-    function getMyConsuption() {}
-    function getMyProduction() {}
-    
 }

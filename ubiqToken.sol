@@ -4,35 +4,35 @@ pragma solidity ^0.4.4;
 contract Token {
 
     /// @return total amount of tokens
-    function totalSupply() constant returns (uint256 supply) {}
+    function totalSupply() public constant returns (uint256 supply) {}
 
     /// @param _owner The address from which the balance will be retrieved
     /// @return The balance
-    function balanceOf(address _owner) constant returns (uint256 balance) {}
+    function balanceOf(address _owner) public constant returns (uint256 balance) {}
 
     /// @notice send `_value` token to `_to` from `msg.sender`
     /// @param _to The address of the recipient
     /// @param _value The amount of token to be transferred
     /// @return Whether the transfer was successful or not
-    function transfer(address _to, uint256 _value) returns (bool success) {}
+    function transfer(address _to, uint256 _value) public returns (bool success) {}
 
     /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
     /// @param _from The address of the sender
     /// @param _to The address of the recipient
     /// @param _value The amount of token to be transferred
     /// @return Whether the transfer was successful or not
-    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {}
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {}
 
     /// @notice `msg.sender` approves `_addr` to spend `_value` tokens
     /// @param _spender The address of the account able to transfer the tokens
     /// @param _value The amount of wei to be approved for transfer
     /// @return Whether the approval was successful or not
-    function approve(address _spender, uint256 _value) returns (bool success) {}
+    function approve(address _spender, uint256 _value) public returns (bool success) {}
 
     /// @param _owner The address of the account owning tokens
     /// @param _spender The address of the account able to transfer the tokens
     /// @return Amount of remaining tokens allowed to spent
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {}
+    function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {}
 
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
@@ -41,7 +41,7 @@ contract Token {
 
 contract StandardToken is Token {
 
-    function transfer(address _to, uint256 _value) returns (bool success) {
+    function transfer(address _to, uint256 _value) public returns (bool success) {
         //Default assumes totalSupply can't be over max (2^256 - 1).
         //If your token leaves out totalSupply and can issue more tokens as time goes on, you need to check if it doesn't wrap.
         //Replace the if with this one instead.
@@ -54,7 +54,7 @@ contract StandardToken is Token {
         } else { return false; }
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         //same as above. Replace this line with the following if you want to protect against wrapping uints.
         //if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
         if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {
@@ -66,17 +66,17 @@ contract StandardToken is Token {
         } else { return false; }
     }
 
-    function balanceOf(address _owner) constant returns (uint256 balance) {
+    function balanceOf(address _owner) public constant returns (uint256 balance) {
         return balances[_owner];
     }
 
-    function approve(address _spender, uint256 _value) returns (bool success) {
+    function approve(address _spender, uint256 _value) public returns (bool success) {
         allowed[msg.sender][_spender] = _value;
         Approval(msg.sender, _spender, _value);
         return true;
     }
 
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {
       return allowed[_owner][_spender];
     }
 
@@ -86,9 +86,6 @@ contract StandardToken is Token {
 }
 
 contract UBIQBiots18 is StandardToken {
-
-    /* TOKEN VARIABLES THAT ARE SPECIAL FOR OUR TOKEN */
-    mapping (address => uint256) usage;         //The usage of the user on a periodical basis is stored here
 
     /*
     NOTE:
@@ -100,33 +97,34 @@ contract UBIQBiots18 is StandardToken {
     uint8 public decimals;                // How many decimals to show. To be standard complicant keep it 18
     string public symbol;                 // An identifier: eg SBX, XPR etc..
     string public version = 'H1.0'; 
-    uint256 public unitsOneEthCanBuy;     // How many units of your coin can be bought by 1 ETH?
-    uint256 public totalEthInWei;         // WEI is the smallest unit of ETH (the equivalent of cent in USD or satoshi in BTC). We'll store the total ETH raised via our ICO here.  
-    address public fundsWallet;           // Where should the raised ETH go?
+    address owner;
 
     // This is a constructor function 
     // which means the following function name has to match the contract name declared above
-    function UBIQBiots18() {
-        balances[msg.sender] = 0;               // Give the creator all initial tokens. This is set to 1'000'000 for example. 
+    function UBIQBiots18() public {
+        balances[msg.sender] = 1000000;               // Give the creator all initial tokens. This is set to 1'000'000 for example. 
             //If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000.
         totalSupply = 1000000000000000000000000;                     // Update total supply (1'000'000 for example)
         name = "UBIQBiots18";                                        // Set the name for display purposes
         decimals = 18;                                               // Amount of decimals for display purposes
         symbol = "UBIQ";                                             // Set the symbol for display purposes
-        unitsOneEthCanBuy = buyPrice;                                // Set the price of your token for the ICO
-        fundsWallet = msg.sender;                                    // The owner of the contract gets ETH
+        owner = msg.sender;                                          // The owner of the contract gets ETH
     }
     
     //setting price
-    uint256 public sellPrice;
     uint256 public buyPrice;
 
-    function setPrices(uint256 newSellPrice, uint256 newBuyPrice) onlyOwner {
-        sellPrice = newSellPrice;
+    function setPrices(uint256 newSellPrice, uint256 newBuyPrice) public {
+        require(msg.sender == owner);
         buyPrice = newBuyPrice;
     }
     
-    //other functions
+    /* MARKET
+    mapping(address => uint256) propositions;
+    function propose(address to, )
+    */
+    
+    /* UNUSED FUNCTIONS
     function() payable{
         totalEthInWei = totalEthInWei + msg.value;
         uint256 amount = msg.value * unitsOneEthCanBuy;
@@ -143,7 +141,7 @@ contract UBIQBiots18 is StandardToken {
         fundsWallet.transfer(msg.value);                               
     }
 
-    /* Approves and then calls the receiving contract */
+    // Approves and then calls the receiving contract
     function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
         allowed[msg.sender][_spender] = _value;
         Approval(msg.sender, _spender, _value);
@@ -154,4 +152,5 @@ contract UBIQBiots18 is StandardToken {
         if(!_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData)) { throw; }
         return true;
     }
+    */
 }

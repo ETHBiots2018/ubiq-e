@@ -1,6 +1,10 @@
 import "./SensorMonitor.sol";
 
-//wroking with https://github.com/ConsenSys/Token-Factory/blob/master/contracts/StandardToken.sol
+/*
+ * Source: https://github.com/ConsenSys/Token-Factory/blob/master/contracts/StandardToken.sol
+ * Author: ConsenSys
+ * Edited by: Jonas Passweg
+ */
 pragma solidity ^0.4.18;
 
 contract Token {
@@ -44,11 +48,7 @@ contract Token {
 contract StandardToken is Token {
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        //Default assumes totalSupply can't be over max (2^256 - 1).
-        //If your token leaves out totalSupply and can issue more tokens as time goes on, you need to check if it doesn't wrap.
-        //Replace the if with this one instead.
-        //if (balances[msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
-        if (balances[msg.sender] >= _value && _value > 0) {
+        if (balances[msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
             balances[msg.sender] -= _value;
             balances[_to] += _value;
             Transfer(msg.sender, _to, _value);
@@ -57,9 +57,7 @@ contract StandardToken is Token {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        //same as above. Replace this line with the following if you want to protect against wrapping uints.
-        //if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
-        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {
+        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
             balances[_to] += _value;
             balances[_from] -= _value;
             allowed[_from][msg.sender] -= _value;
@@ -103,7 +101,8 @@ contract UBIQBiots18 is StandardToken {
 
     // This is a constructor function 
     // which means the following function name has to match the contract name declared above
-    function UBIQBiots18(uint256 amount, Grid userMaps) public {
+    function UBIQBiots18() public {
+        uint256 amount = 1000000;
         balances[msg.sender] = amount;               // Give the creator all initial tokens. This is set to 1'000'000 for example. 
             //If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000.
         totalSupply = amount * 1000000000000000000;                  // Update total supply (1'000'000 for example)
@@ -111,24 +110,36 @@ contract UBIQBiots18 is StandardToken {
         decimals = 18;                                               // Amount of decimals for display purposes
         symbol = "UBIQ";                                             // Set the symbol for display purposes
         owner = msg.sender;                                          // The owner of the contract gets ETH
-        ourUserMaps = userMaps;
     }
     
-    //setting price
+    //The price if user want to pay their energy bill with money
     uint256 public buyPrice;
 
+    //Method that sets price / user must be owner = SensorOwner contract
     function setPrices(uint256 newBuyPrice) public {
         require(msg.sender == owner);
         buyPrice = newBuyPrice;
     }
     
+    function setOurUserMaps(Grid userMaps) public {
+        require(msg.sender == owner);
+        ourUserMaps = userMaps;
+    }
+    
+    //returns price of energy at that moment
     function getPrice() public view returns (uint256) {
         return buyPrice;
     }
     
-    function payEnergyWithTokens() {
-        uint256 toPay = ourUserMaps.getToPay(msg.sender);
-        uint256 balance = balanceOf(msg.sender);
+    //Way for user to pay energy bill with cash
+    //called by user
+    //returns balance
+    function payEnergyWithTokens() public {
+        uint256 toPay = ourUserMaps.getToPay(msg.sender);   //gets the amount the user has to pay
+        uint256 balance = balanceOf(msg.sender);            //see balanceOf
+        
+        //pays with all the tokens the user has and subtracts them of the amount the user has to pay
+        //transfer these token to the owner of the contract
         if(toPay > balance) {
             ourUserMaps.setToPay(msg.sender, toPay - balance);
             transfer(owner, balance);
@@ -138,6 +149,8 @@ contract UBIQBiots18 is StandardToken {
         }
     }
     
+    //Way for user to pay energy bill with cash
+    //called by user
     function payEnergyWithCash() public {
         //get contract with bank account
         //uint256 amountPayed = 100;
@@ -145,38 +158,9 @@ contract UBIQBiots18 is StandardToken {
         ourUserMaps.setToPay(msg.sender, 0); //later changed with toPay-amountPayed
     }
     
-    /* MARKET
+    /* Additional Market can be implemented here
     mapping(address => uint256) propositions;
     function propose(address to, )
     */
     
-    /* UNUSED FUNCTIONS
-    function() payable{
-        totalEthInWei = totalEthInWei + msg.value;
-        uint256 amount = msg.value * unitsOneEthCanBuy;
-        if (balances[fundsWallet] < amount) {
-            return;
-        }
-
-        balances[fundsWallet] = balances[fundsWallet] - amount;
-        balances[msg.sender] = balances[msg.sender] + amount;
-
-        Transfer(fundsWallet, msg.sender, amount); // Broadcast a message to the blockchain
-
-        //Transfer ether to fundsWallet
-        fundsWallet.transfer(msg.value);                               
-    }
-
-    // Approves and then calls the receiving contract
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
-        allowed[msg.sender][_spender] = _value;
-        Approval(msg.sender, _spender, _value);
-
-        //call the receiveApproval function on the contract you want to be notified. This crafts the function signature manually so one doesn't have to include a contract in here just for this.
-        //receiveApproval(address _from, uint256 _value, address _tokenContract, bytes _extraData)
-        //it is assumed that when does this that the call *should* succeed, otherwise one would use vanilla approve instead.
-        if(!_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData)) { throw; }
-        return true;
-    }
-    */
 }
